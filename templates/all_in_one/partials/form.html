@@ -1,0 +1,14 @@
+{% load static %}
+
+{% if item %}
+<form id="editForm" @submit.prevent="editItem({% url 'djit_ripd:all_in_one_id' item_name item.id %}, {{ item.id }})" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+    <input type="hidden" name="itemId" id="itemId" value="{{ item.id }}">
+{% else %}
+<form method="post" id="editForm" @submit.prevent="postItem({% url 'djit_ripd:all_in_one' item_name %})" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+{% endif %}
+
+    {% csrf_token %}
+
+    {{ form.as_p }}
+    <button type="submit">Submit</button>
+</form>

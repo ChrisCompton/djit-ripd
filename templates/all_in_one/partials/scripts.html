@@ -1,0 +1,78 @@
+<script>
+    function serializeForm(formElement) {
+        const formData = new FormData(formElement);
+        const data = {};
+        formData.forEach((value, key) => {
+            if (!data.hasOwnProperty(key)) {
+                data[key] = value;
+            } else if (Array.isArray(data[key])) {
+                data[key].push(value);
+            } else {
+                data[key] = [data[key], value];
+            }
+        });
+        return data;
+    }
+
+    function postItem(url) {
+      const form = document.getElementById('editForm');
+      const data = serializeForm(form);
+
+      fetch(url, {
+          method: 'POST',
+          headers: {
+              'X-CSRFToken': '{{ csrf_token }}',
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+      }).then(response => {
+          if (response.ok) {
+              console.log('Item created successfully');
+              form.reset();
+              location.reload();
+          } else {
+              alert('Something went wrong');
+          }
+      });
+  }
+
+    function editItem(id, url) {
+        const form = document.getElementById('editForm');
+        const itemIdInput = document.getElementById('itemId');
+
+        const data = serializeForm(form);
+
+        fetch(url, {
+            method: 'PUT',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        }).then(response => {
+            if (response.ok) {
+                console.log('Item updated successfully');
+                form.reset();
+                location.reload();
+            } else {
+                alert('Something went wrong');
+            }
+        });
+    }
+
+    function deleteItem(url) {
+      fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'Content-Type': 'application/json'
+        },
+      }).then(response => {
+        if (response.ok) {
+          location.reload();
+        } else {
+          alert('Something went wrong');
+        }
+      });
+    }
+  </script>
