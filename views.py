@@ -19,44 +19,57 @@ def all_in_one(request, item_name, id=None):
         if request.method == 'DELETE':
             print("Handling Record DELETE request")
             basic_delete(request, item_name, id)
+
         elif request.method == 'PATCH':
             print("Handling Record PATCH request")
             basic_patch(request, item_name, id)
+
         elif request.method == 'PUT':
             print("Handling Record PUT request")
             item = get_object_or_404(Item, pk=id)
+            context['item'] = item
+
             form = ItemForm(request.POST, instance=item)
             if form.is_valid():
                 form.save()
                 context['success'] = 'Item created successfully.'
             else:
                 context['error'] = 'Error creating item.'
+
         elif request.method == 'POST':
             print("Handling Record POST request")
             item = get_object_or_404(Item, pk=id)
+            context['item'] = item
+
             form = ItemForm(instance=item)
+
         elif request.method == 'GET':
             print("Handling Record GET request")
             item = get_object_or_404(Item, pk=id)
+            context['item'] = item
+
             form = ItemForm(instance=item)
     else:
         if request.method == 'POST':
             print("Handling New POST request")
             form = ItemForm(request.POST)
-
+            
             if form.is_valid():
                 form.save()
                 context['success'] = 'Item created successfully.'
             else:
                 context['error'] = 'Error creating item.'
+                print(form.errors.as_json())
         else:
-            print("Handling Default request")
+            print("Handling Default request", request.method)
             form = ItemForm()
     
     context['form'] = form
 
     items = Item.objects.all()
     context['items'] = items
+
+    print("Context",context)
 
     render_template = 'all_in_one/index.html'
     return render(request, render_template, context)
