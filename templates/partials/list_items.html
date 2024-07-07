@@ -1,0 +1,17 @@
+{% extends "fragment.html" %}
+{% block content %}
+    {% for item in items %}
+        <tr>
+            <td class="prose">
+                <h3>{{ item.name }}</h3>
+                <p class="text-sm text-clip">
+                    {{ item.description }}
+                </p>
+            </td>
+            <th>
+              <a class="btn btn-ghost btn-xs" href="{% url 'djit_ripd:htmx_handler_id' item_name item.id %}">Edit</a>
+              <button class="transit-delete btn btn-ghost btn-xs" hx-delete="{% url 'djit_ripd:htmx_handler_id' item_name item.id %}" hx-swap="outerHTML swap:1s">Delete</button>
+            </th>
+          </tr>
+    {% endfor %}
+{% endblock %}

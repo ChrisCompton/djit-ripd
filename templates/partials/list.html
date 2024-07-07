@@ -1,0 +1,40 @@
+{% load static %}
+<style>
+    .transit-insert.htmx-swapping {
+      opacity: 0;
+      transition: opacity 2s ease-out;
+    }
+    .transit-insert.htmx-added {
+        opacity: 0;
+    }
+    .transit-delete {
+        opacity: 1;
+        transition: opacity 1s ease-out;
+    }
+</style>
+
+
+
+
+
+    <table class="table">
+        <!-- head -->
+        <thead>
+        <tr>
+            <th>Item</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody id="task-list" hx-get="{% url 'djit_ripd:htmx_handler_list_items' item_name %}" hx-trigger="load, refreshTasks from:body">
+
+
+        
+        </tbody>
+        <!-- foot -->
+        <tfoot>
+          <tr>
+            <th>Item</th>
+            <th>Action</th>
+          </tr>
+        </tfoot>
+      </table>

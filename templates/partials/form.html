@@ -1,0 +1,42 @@
+{% load static %}
+{% load form_filters %}
+
+<div class="card bg-primary w-96">
+    <div class="card-body djit-form">
+
+    {% if item %}
+        <h2 class="card-title primary-content">Update Item</h2>
+        <p>This item is updatable.</p>
+        <form hx-post="{% url 'djit_ripd:htmx_handler_id' item_name item.id %}" class="djit" hx-target="#task-list">
+            {% for field in form %}
+            <p>{{ field }}</p> <!-- Render the field without its label -->
+            {% endfor %}
+            <div class="card-actions justify-end">
+                <button class="btn btn-primary">Save</button>
+                <a class="btn" href="{% url 'djit_ripd:htmx_handler' item_name %}">Close</a>
+            </div>
+        </form>
+    {% else %}
+        <h2 class="card-title primary-content">Add Item</h2>
+        <p>Enter details below.</p>
+        <form hx-post="{% url 'djit_ripd:htmx_handler' item_name %}" class="djit" hx-target="#task-list">
+            {% for field in form %}
+            <p>{{ field }}</p> <!-- Render the field without its label -->
+            {% endfor %}
+            <div class="card-actions justify-end">
+                <button class="btn btn-primary">Add</button>
+            </div>
+        </form>
+
+        <script>
+            let form = document.querySelector('form')
+            form.addEventListener('htmx:afterRequest', () => {
+                form.reset()
+            });
+        </script>
+    {% endif %}
+
+    </div>
+</div>
+
+

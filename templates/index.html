@@ -1,0 +1,26 @@
+{% extends "djit_theme/base.html" %}
+
+{% load static %}
+
+{% block content %}
+
+
+<div class="container mx-auto px-4 pt-20">
+
+<div class="flex w-full">
+    <div class="djit-divider">
+        <h1>{{ item_name|title }} List</h1>
+
+        {% include "partials/list.html" %}
+    </div>
+
+
+
+    <div class="djit-divider">
+        {% include "partials/form.html" %}
+    </div>
+</div>
+
+</div>
+
+{% endblock %}

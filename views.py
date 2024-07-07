@@ -1,17 +1,23 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
+from django.template.loader import render_to_string
 
 from .models import Item
 from .forms import ItemForm
 
-def all_in_one(request, item_name, id=None):
+
+
+
+
+def htmx_handler(request, item_name, id=None):
     """Manage all CRUD operations in a single view."""
     context = {
         'item_name': item_name,
         'id': id
     }
+    render_template = 'index.html'
 
     form = ItemForm()
 
@@ -20,28 +26,9 @@ def all_in_one(request, item_name, id=None):
             print("Handling Record DELETE request")
             basic_delete(request, item_name, id)
 
-        elif request.method == 'PATCH':
-            print("Handling Record PATCH request")
-            basic_patch(request, item_name, id)
-
-        elif request.method == 'PUT':
-            print("Handling Record PUT request")
-            item = get_object_or_404(Item, pk=id)
-            context['item'] = item
-
-            form = ItemForm(request.POST, instance=item)
-            if form.is_valid():
-                form.save()
-                context['success'] = 'Item created successfully.'
-            else:
-                context['error'] = 'Error creating item.'
-
-        elif request.method == 'POST':
-            print("Handling Record POST request")
-            item = get_object_or_404(Item, pk=id)
-            context['item'] = item
-
-            form = ItemForm(instance=item)
+        elif request.method in ['PATCH','PUT','POST']:
+            print("Handling Record POST UPDATE request")
+            basic_update(request, item_name, id)
 
         elif request.method == 'GET':
             print("Handling Record GET request")
@@ -52,14 +39,7 @@ def all_in_one(request, item_name, id=None):
     else:
         if request.method == 'POST':
             print("Handling New POST request")
-            form = ItemForm(request.POST)
-            
-            if form.is_valid():
-                form.save()
-                context['success'] = 'Item created successfully.'
-            else:
-                context['error'] = 'Error creating item.'
-                print(form.errors.as_json())
+            basic_insert(request, item_name)
         else:
             print("Handling Default request", request.method)
             form = ItemForm()
@@ -71,35 +51,30 @@ def all_in_one(request, item_name, id=None):
 
     print("Context",context)
 
-    render_template = 'all_in_one/index.html'
-    return render(request, render_template, context)
+    response = render(request, render_template, context)
+
+    response['HX-Trigger'] = 'refreshTasks'
+    return response
 
 
 
-def basic_list(request, item):
-    context = {
-        'item': item
-    }
-
+def list_items(request, item_name):
     items = Item.objects.all()
-    """Get all items."""
-
-    context['items'] = items
-
-    return render(request, 'basic/list.html', context)
-
-def basic_read(request, item, id):
-    """Read a single item."""
-
     context = {
-        'item': item,
-        'id': id
+        'item_name': item_name,
+        'items': items
     }
 
-    item = Item.objects.get(id=id)
-    context['item'] = item
+    html = render_to_string('partials/list_items.html', context, request)
+    response = HttpResponse(html)
 
-    return render(request, 'basic/read.html', context)
+    return response
+
+
+
+
+
+
 
 def basic_insert(request, item):
     """Insert a new item."""
@@ -117,41 +92,14 @@ def basic_insert(request, item):
         else:
             context['error'] = 'Error creating item.'
 
-    form = ItemForm()
-    context['form'] = form
+    html = render_to_string('partials/list_items.html', context, request)
+    response = HttpResponse(html)
 
-    return render(request, 'basic/insert.html', context)
+    response['HX-Trigger'] = 'refreshTasks'
+    return response
 
 
-@csrf_exempt
-def basic_patch(request, item, id):
-    """Patch an existing item."""
-    if request.method == 'POST':
-        # Retrieve the item, or return a 404 if not found
-        item = get_object_or_404(Item, id=id)
-
-        # Update fields if provided in the request
-        name = request.POST.get('name', None)
-        description = request.POST.get('description', None)
-        classification = request.POST.get('classification', None)
-
-        if name is not None:
-            item.name = name
-        if description is not None:
-            item.description = description
-        if classification is not None:
-            item.classification = classification
-
-        # Save the item to apply changes
-        item.save()
-
-        # Return a success response
-        return JsonResponse({'success': 'Item updated successfully.'}, status=200)
-    else:
-        # Return an error response if the request method is not POST
-        return JsonResponse({'error': 'Invalid request method.'}, status=405)
-
-def basic_put(request, item, id):
+def basic_update(request, item, id):
     """Put an existing item."""
 
     context = {
@@ -162,22 +110,28 @@ def basic_put(request, item, id):
     item = Item.objects.get(id=id)
     #update item where values changed:
     if request.method == 'POST':
-        name = request.POST.get('name')
-        description = request.POST.get('description')
-        classification = request.POST.get('classification')
+        form = ItemForm(request.POST)
 
-        item.name = name
-        item.description = description
-        item.classification = classification
-        result = item.save()
+        if form.is_valid():
+            item.name = form.cleaned_data["name"]
+            item.description = form.cleaned_data["description"]
+            result = item.save()
 
-        ## If successful, return success message on context, if not, send error message
-        if result:
-            context['success'] = 'Item updated successfully.'
+            ## If successful, return success message on context, if not, send error message
+            if result:
+                context['success'] = 'Item updated successfully.'
+            else:
+                context['error'] = 'Error updating item.'
         else:
-            context['error'] = 'Error updating item.'
+            print("ERROR: Form is not valid")
+            context['error'] = 'The form is not valid.'
 
-    return render(request, 'basic/put.html', context)
+    html = render_to_string('partials/list_items.html', context, request)
+    response = HttpResponse(html)
+
+    response['HX-Trigger'] = 'refreshTasks'
+    return response
+
 
 def basic_delete(request, item, id):
     """Delete an existing item."""
@@ -196,4 +150,9 @@ def basic_delete(request, item, id):
     else:
         context['error'] = 'Error deleting item.'
 
-    return render(request, 'basic/delete.html', context)
+    html = render_to_string('partials/list_items.html', context, request)
+
+    response = HttpResponse(html)
+
+    response['HX-Trigger'] = 'refreshTasks'
+    return response
